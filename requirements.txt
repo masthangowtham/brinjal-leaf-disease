@@ -1,5 +1,5 @@
 Flask
-tensorflow
 numpy
 Pillow
 gdown
+tensorflow-cpu
