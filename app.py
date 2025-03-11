@@ -1,35 +1,39 @@
-from flask import Flask, render_template, request, redirect, url_for
-import tensorflow as tf
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from flask import Flask, render_template, request, redirect
 import numpy as np
+import tensorflow as tf
+from PIL import Image
 import os
 import gdown
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-# Google Drive File ID of the .h5 model
-MODEL_FILE_ID = '1DFAISu8-zx9c9h-iD9wPngKQAoZhV1xx'
-MODEL_PATH = 'models/brinjal_model.h5'
+# TensorFlow Lite model path
+MODEL_FILE_ID = '1frIKcMmUP4vbO989g3v7-_xYjn2KEFDc'
+MODEL_PATH = 'models/brinjal_model.tflite'
 
-# Download model if not exists
+# Download .tflite model if not exists
 if not os.path.exists(MODEL_PATH):
-    print("Downloading model from Google Drive...")
+    print("Downloading TFLite model from Google Drive...")
     url = f'https://drive.google.com/uc?id={MODEL_FILE_ID}'
     os.makedirs('models', exist_ok=True)
     gdown.download(url, MODEL_PATH, quiet=False)
     print("Download completed.")
 
-# Load model
-print("Loading model...")
-model = tf.keras.models.load_model(MODEL_PATH)
-print("Model loaded successfully.")
+# Load TensorFlow Lite model
+interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+print("Model loaded and ready!")
 
 # Class names
 class_names = ['Aphids', 'bacterial_wilt', 'cercospora', 'collar_rot', 'colorado_bettle', 'little-leaf', 'mites', 'pest']
-class_names_telugu = ['పెను బంక', 'వెల్లులి ఎరుపు కాళ్ళు', 'పొడిన మొక్క', 'ముళ్ళு చేద', 'కలరాడో బీటిల్ ఆకు పోటు', 'చిన్న ఆకు వ్యாதி', 'ఎర్ర నల్లి', 'చీడపురుగు']
+class_names_telugu = ['పెను బంక', 'వెల్లులి ఎరుపు కాళ్ళు', 'పొడిన మొక్క', 'ముళ్ళு చేద', 'కలరాడో బీటిల్ ఆకు పోటు', 'చిన్న ఆకు వ్యాధి', 'ఎర్ర నల్లి', 'చీడపురుగు']
 class_names_tamil = ['ஆஃபிட்ஸ்','பெக்டீரியல் வில்ட்','செர்கோஸ்போரா','காலர் ராட்','கலராடோ பெட்டில்','லிட்டில்-லீஃப்','மைட்ஸ்','பெஸ்ட்']
 
+# Default Gemini API Key (replace this with your actual default key)
 DEFAULT_API_KEY = "YOUR_DEFAULT_GEMINI_API_KEY"
 
 @app.route('/')
@@ -51,13 +55,15 @@ def predict():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(filepath)
 
-    # Preprocess image
-    img = load_img(filepath, target_size=(224, 224))
-    img_array = img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+    # Preprocess the image
+    img = Image.open(filepath).resize((224, 224))
+    img_array = np.array(img) / 255.0  # Normalize
+    img_array = np.expand_dims(img_array.astype(np.float32), axis=0)
 
-    # Predict
-    predictions = model.predict(img_array)
+    # Perform prediction
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    predictions = interpreter.get_tensor(output_details[0]['index'])
     predicted_class_idx = np.argmax(predictions)
     predicted_class_label = class_names[predicted_class_idx]
 
@@ -73,6 +79,7 @@ def predict():
                            api_key_used=user_api_key,
                            image_path=filepath)
 
-if _name_ == '_main_':
-    port = int(os.environ.get('PORT', 5000))  # Use Render's provided port
-    app.run(host='0.0.0.0', port=port, debug=True)  # Host 0.0.0.0 to expose app publicly
+# ✅ Render.com requires binding to PORT variable, not default localhost:5000
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))  # Use Render assigned port or 5000 as default
+    app.run(host='0.0.0.0', port=port, debug=True)
