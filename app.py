@@ -3,20 +3,34 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 import os
+import gdown
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-# Load the model
-model = tf.keras.models.load_model('models/brinjal_model.h5')
+# Google Drive File ID of the .h5 model
+MODEL_FILE_ID = '1DFAISu8-zx9c9h-iD9wPngKQAoZhV1xx'
+MODEL_PATH = 'models/brinjal_model.h5'
 
-# Default Gemini API Key (replace with your default)
-DEFAULT_API_KEY = "YOUR_DEFAULT_GEMINI_API_KEY"
+# Download model if not exists
+if not os.path.exists(MODEL_PATH):
+    print("Downloading model from Google Drive...")
+    url = f'https://drive.google.com/uc?id={MODEL_FILE_ID}'
+    os.makedirs('models', exist_ok=True)
+    gdown.download(url, MODEL_PATH, quiet=False)
+    print("Download completed.")
+
+# Load model
+print("Loading model...")
+model = tf.keras.models.load_model(MODEL_PATH)
+print("Model loaded successfully.")
 
 # Class names
 class_names = ['Aphids', 'bacterial_wilt', 'cercospora', 'collar_rot', 'colorado_bettle', 'little-leaf', 'mites', 'pest']
-class_names_telugu = ['పెను బంక', 'వెల్లులి ఎరుపు కాళ్ళు', 'పొడిన మొక్క', 'ముళ్ళு చేద', 'కలరాడో బీటిల్ ఆకు పోటు', 'చిన్న ఆகு వ్యாதి', 'ఎర్ర నల్లి', 'చీడపురుగు']
+class_names_telugu = ['పెను బంక', 'వెల్లులి ఎరుపు కాళ్ళు', 'పొడిన మొక్క', 'ముళ్ళு చేద', 'కలరాడో బీటిల్ ఆకు పోటు', 'చిన్న ఆకు వ్యாதி', 'ఎర్ర నల్లి', 'చీడపురుగు']
 class_names_tamil = ['ஆஃபிட்ஸ்','பெக்டீரியல் வில்ட்','செர்கோஸ்போரா','காலர் ராட்','கலராடோ பெட்டில்','லிட்டில்-லீஃப்','மைட்ஸ்','பெஸ்ட்']
+
+DEFAULT_API_KEY = "YOUR_DEFAULT_GEMINI_API_KEY"
 
 @app.route('/')
 def index():
