@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaf Disease Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h2 class="text-center">🌿 Leaf Disease Detector 🌿</h2>
+    <form method="POST" action="/predict" enctype="multipart/form-data" class="p-4 bg-white shadow rounded">
+        <div class="mb-3">
+            <label class="form-label">Upload Leaf Image:</label>
+            <input type="file" name="image" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Select Language:</label>
+            <select name="language" class="form-select">
+                <option value="none" selected>English (Default)</option>
+                <option value="tamil">Tamil</option>
+                <option value="telugu">Telugu</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Google Gemini API Key (Optional):</label>
+            <input type="text" name="api_key" class="form-control" placeholder="Leave empty to use default">
+        </div>
+        <button type="submit" class="btn btn-success w-100">Analyze</button>
+    </form>
+</div>
+</body>
+</html>
